@@ -1,6 +1,3 @@
-/**
- * 
- */
 package com.trendrr.beanstalk;
 
 import java.util.HashSet;
@@ -21,7 +18,7 @@ public class BeanstalkPool {
 
     protected final Log log = LogFactory.getLog(BeanstalkPool.class);
 	
-	protected final Set<PoolClient> clients = new HashSet<PoolClient>();
+	protected final Set<PoolClient> clients = new HashSet<>();
 	private final int maxClients;
 	
 	private final long maxUseTime; 
@@ -31,7 +28,7 @@ public class BeanstalkPool {
 	private final int port;
 	private final String tube;
     
-    private class PoolClient extends BeanstalkClient {
+    private static class PoolClient extends BeanstalkClient {
         private long inUseSince;
         private long lastUsed;
       
@@ -44,6 +41,10 @@ public class BeanstalkPool {
             // mark client as unused
             inUseSince = 0;   
         }
+
+        public void closeConnection() {
+        	super.close();
+		}
     }
 	
 	/**
@@ -97,11 +98,10 @@ public class BeanstalkPool {
 		/*
 		 * synchronized, but should be fast as the client initialization code happens lazily. 
 		 */
+		Set<PoolClient> toRemove = new HashSet<>();
 		
-		Set<PoolClient> toRemove = new HashSet<PoolClient>();
-		
-		long max = getCurrentTime() - this.maxUseTime;
-		long maxIdle = getCurrentTime() - this.maxIdleTime;
+		long maxUseCutoff = getCurrentTime() - this.maxUseTime;
+		long maxIdleCutoff = getCurrentTime() - this.maxIdleTime;
 		
 		BeanstalkClient returnClient = null;
 		
@@ -111,13 +111,13 @@ public class BeanstalkPool {
 		 * for now I don't see it being a huge problem.
 		 */
 		for (PoolClient client : clients) {
-			if (client.inUseSince != 0 && client.inUseSince < max) {
+			if (client.inUseSince != 0 && client.inUseSince < maxUseCutoff) {
 				client.reap = true;
 			}	
-			if (client.lastUsed != 0 && client.lastUsed < maxIdle) {
+			if (client.lastUsed != 0 && client.lastUsed < maxIdleCutoff) {
 				client.reap = true;
 			}
-			if (client.con != null && ! client.con.isOpen()) {
+			if (client.con != null && !client.con.isOpen()) {
 				client.reap = true;
 			}
 			
@@ -131,10 +131,10 @@ public class BeanstalkPool {
 				returnClient = client;
 			}
 		}
-		for (BeanstalkClient c : toRemove) {
+		for (PoolClient c : toRemove) {
 			log.debug("REAPING Client: " + c);
 			this.clients.remove(c);
-			c.close();
+			c.closeConnection();
 		}
 		if (returnClient != null) {
 			return returnClient;
