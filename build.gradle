@@ -1,3 +1,6 @@
+plugins {
+	id 'maven-publish'
+}
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'distribution'
@@ -5,8 +8,6 @@ apply plugin: 'distribution'
 repositories {
   jcenter() 
 }
-
-version = '1.1'
 
 sourceSets {
 	main {
@@ -25,3 +26,18 @@ dependencies {
 	implementation 'commons-logging:commons-logging:1.2'
 }
 
+publishing {
+	repositories {
+		maven {
+			url = "$buildDir/repo"
+		}
+	}
+	publications {
+		maven(MavenPublication) {
+			groupId = "trendrr"
+			artifactId = "beanstalk-client"
+			version = "1.2"
+			from components.java
+		}
+	}
+}

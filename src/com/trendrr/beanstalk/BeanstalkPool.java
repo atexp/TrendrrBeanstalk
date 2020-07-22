@@ -58,17 +58,21 @@ public class BeanstalkPool {
 	public BeanstalkPool(String addr, int port, int maxPoolSize, String tube) {
 	    this(addr, port, maxPoolSize, tube, DEFAULT_MAX_USE_TIME, DEFAULT_MAX_IDLE_TIME);
 	}
-	
-	public BeanstalkPool(String addr, int port, int maxPoolSize, String tube, long  maxUseTime, long maxIdleTime) {
-	        this.addr = addr;
-	        this.port = port;
-	        this.maxClients = maxPoolSize;
-	        this.tube = tube;
-	        this.maxUseTime = maxUseTime;
-	        this.maxIdleTime = maxIdleTime;
+
+	public BeanstalkPool(String addr, int port, int maxPoolSize, String tube, long maxUseTime,
+		long maxIdleTime) {
+		if (maxUseTime == 0 || maxIdleTime == 0) {
+			throw new IllegalStateException("maxTimes can't be 0");
+		}
+		this.addr = addr;
+		this.port = port;
+		this.maxClients = maxPoolSize;
+		this.tube = tube;
+		this.maxUseTime = maxUseTime;
+		this.maxIdleTime = maxIdleTime;
 	}
-	
-    /**
+
+	/**
 	 * setup a new pool.  
 	 * 
 	 * @param addr address of the beanstalkd server to connection to
@@ -120,8 +124,7 @@ public class BeanstalkPool {
 			if (client.con != null && !client.con.isOpen()) {
 				client.reap = true;
 			}
-			
-			
+
 			if (client.reap) {
 				toRemove.add(client);
 			} else if (returnClient == null && client.inUseSince == 0) {
