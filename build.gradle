@@ -6,10 +6,6 @@ repositories {
   jcenter() 
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '2.11'
-}
-
 version = '1.1'
 
 sourceSets {
@@ -26,6 +22,6 @@ sourceSets {
 }
 
 dependencies {
-	compile 'commons-logging:commons-logging:1.2'
+	implementation 'commons-logging:commons-logging:1.2'
 }
 
